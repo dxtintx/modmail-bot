@@ -1,2 +1,2 @@
-.env
+.env.development
 node_modules
