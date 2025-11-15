@@ -153,6 +153,11 @@ client.on(Events.MessageCreate, async (message) => {
                         .setTimestamp(),
                 ],
             });
+        } else {
+            message.channel.sendTyping();
+            return await message.reply(
+                "You have no taken mails. Use </mails:1438888694248509441> to see all mails and </respond:1439199278512869379> to take one."
+            );
         }
     } else {
         if (mails.filter((m) => m.from == message.author.id).length > 0) {
@@ -329,6 +334,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 );
 
                 mails = mails.filter((mail) => mail.takenBy == null);
+
+                if (mails.length == 0) {
+                    return interaction.editReply({
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle("There are no available mails.")
+                                .setColor(0x00ff00),
+                        ],
+                    });
+                }
 
                 var mailChunks = [];
                 var chunkSize = 10;
