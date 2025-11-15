@@ -23,6 +23,7 @@ const client = new Client({
     ],
     partials: [Partials.Channel],
 });
+const phrase = require("./phrases.json");
 const fs = require("fs");
 const path = require("path");
 const [wlPath, mailsPath] = ["/data/whitelist.json", "/data/mails.json"];
@@ -129,6 +130,14 @@ client.on(Events.ClientReady, () => {
     console.log("Modmail is active");
 });
 
+function compareStrings(blank, ...strings) {
+    var res = blank;
+    for (let i = 0; i <= strings.length; i++) {
+        res = res.replace("%s", strings[i]);
+    }
+    return res;
+}
+
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot || !(message.channel instanceof DMChannel)) return;
     var mails = JSON.parse(
@@ -146,7 +155,10 @@ client.on(Events.MessageCreate, async (message) => {
                     new EmbedBuilder()
                         .setDescription(message.content)
                         .setAuthor({
-                            name: `Response from ${message.author.tag}`,
+                            name: compareStrings(
+                                phrase.RESPONSE_FROM,
+                                message.author.tag
+                            ),
                             iconURL: message.author.displayAvatarURL(),
                         })
                         .setColor(0x0f0)
@@ -155,9 +167,7 @@ client.on(Events.MessageCreate, async (message) => {
             });
         } else {
             message.channel.sendTyping();
-            return await message.reply(
-                "You have no taken mails. Use </mails:1438888694248509441> to see all mails and </respond:1439199278512869379> to take one."
-            );
+            return await message.reply(compareStrings(phrase.NO_TAKEN_MAILS));
         }
     } else {
         if (mails.filter((m) => m.from == message.author.id).length > 0) {
@@ -169,7 +179,11 @@ client.on(Events.MessageCreate, async (message) => {
                         new EmbedBuilder()
                             .setDescription(message.content)
                             .setAuthor({
-                                name: `Response from ${message.author.tag} (Mail ID: ${mail[0].id})`,
+                                name: compareStrings(
+                                    phrase.RESPONSE_FROM,
+                                    message.author.tag,
+                                    mail[0].id
+                                ),
                                 iconURL: message.author.displayAvatarURL(),
                             })
                             .setColor(0x0f0)
