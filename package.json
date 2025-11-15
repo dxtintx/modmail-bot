@@ -1,25 +1,25 @@
 {
-  "name": "modmail",
-  "version": "1.0.0",
-  "description": "",
-  "homepage": "https://github.com/TwelveNord-Swiffty/modmail-bots#readme",
-  "bugs": {
-    "url": "https://github.com/TwelveNord-Swiffty/modmail-bots/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/TwelveNord-Swiffty/modmail-bots.git"
-  },
-  "license": "MIT",
-  "author": "Twelve Nord",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {
-    "discord.js": "^14.24.2",
-    "dotenv": "^17.2.3",
-    "nodemon": "^3.1.11"
-  }
+    "name": "modmail",
+    "version": "1.0.0",
+    "description": "",
+    "homepage": "https://github.com/TwelveNord-Swiffty/modmail-bots#readme",
+    "bugs": {
+        "url": "https://github.com/TwelveNord-Swiffty/modmail-bots/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/TwelveNord-Swiffty/modmail-bots.git"
+    },
+    "license": "MIT",
+    "author": "Twelve Nord",
+    "type": "commonjs",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "discord.js": "^14.24.2",
+        "dotenv": "^17.2.3",
+        "nodemon": "^3.1.11"
+    }
 }
