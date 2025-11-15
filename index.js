@@ -149,7 +149,7 @@ client.on(Events.MessageCreate, async (message) => {
                             name: `Response from ${message.author.tag}`,
                             iconURL: message.author.displayAvatarURL(),
                         })
-                        .setColor(0x00ff00)
+                        .setColor(0x0f0)
                         .setTimestamp(),
                 ],
             });
@@ -172,7 +172,7 @@ client.on(Events.MessageCreate, async (message) => {
                                 name: `Response from ${message.author.tag} (Mail ID: ${mail[0].id})`,
                                 iconURL: message.author.displayAvatarURL(),
                             })
-                            .setColor(0x00ff00)
+                            .setColor(0x0f0)
                             .setTimestamp(),
                     ],
                 });
@@ -260,7 +260,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                         embeds: [
                             new EmbedBuilder()
                                 .setTitle("Successfully closed the mail.")
-                                .setColor(0x00ff00),
+                                .setColor(0x0f0),
                         ],
                     });
                 }
@@ -309,7 +309,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     embeds: [
                         new EmbedBuilder()
                             .setTitle("Successfully responded to mail.")
-                            .setColor(0x00ff00),
+                            .setColor(0x0f0),
                     ],
                 });
             }
@@ -340,7 +340,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                         embeds: [
                             new EmbedBuilder()
                                 .setTitle("There are no available mails.")
-                                .setColor(0x00ff00),
+                                .setColor(0x0f0),
                         ],
                     });
                 }
@@ -358,7 +358,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                         .setTitle(
                             `Mails (Page ${index + 1}/${mailChunks.length})`
                         )
-                        .setColor(0x00ff00);
+                        .setColor(0x0f0);
                     chunk.forEach((mailId) => {
                         embed.addFields({
                             name: `Mail ID: ${mails[mailId].id}`,
@@ -460,7 +460,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                             embeds: [
                                 new EmbedBuilder()
                                     .setTitle("User added")
-                                    .setColor(0x00ff00),
+                                    .setColor(0x0f0),
                             ],
                         });
                     }
@@ -502,7 +502,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                             embeds: [
                                 new EmbedBuilder()
                                     .setTitle("User removed")
-                                    .setColor(0x00ff00),
+                                    .setColor(0x0f0),
                             ],
                         });
                     }
