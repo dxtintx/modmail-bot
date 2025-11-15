@@ -1,5 +1,0 @@
-{
-    "RESPONSE_FROM": "Response from %s",
-    "RESPONSE_FROM_ID": "Response from %s (Mail ID: %s)",
-    "NO_TAKEN_MAILS": "You have no taken mails. Use </mails:0> to see all mails and </respond:0> to take one."
-}
