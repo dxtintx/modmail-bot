@@ -23,10 +23,10 @@ const client = new Client({
     ],
     partials: [Partials.Channel],
 });
-const phrase = require("./phrases.json");
+const phrase = require("./config/phrases.json");
 const fs = require("fs");
 const path = require("path");
-const [wlPath, mailsPath] = ["/data/whitelist.json", "/data/mails.json"];
+const [wlPath, mailsPath] = ["./data/whitelist.json", "./data/mails.json"];
 const dotenv = require("dotenv").config({
     path: process.argv[2] == "dev" ? ".env.development" : ".env",
 });
@@ -84,20 +84,20 @@ commands.forEach((c) => {
     );
 });
 
-if (!fs.existsSync(path.resolve(__dirname + "/data"))) {
-    fs.mkdir(path.resolve(__dirname + "/data"), (err) => {
+if (!fs.existsSync(path.resolve(__dirname, "/data"))) {
+    fs.mkdir(path.resolve(__dirname, "/data"), (err) => {
         if (err) throw err;
     });
 }
-if (!fs.existsSync(path.resolve(__dirname + wlPath))) {
+if (!fs.existsSync(path.resolve(__dirname, wlPath))) {
     console.log("Whitelist file not found, creating...");
-    fs.writeFile(path.resolve(__dirname + wlPath), "[]", (err) => {
+    fs.writeFile(path.resolve(__dirname, wlPath), "[]", (err) => {
         if (err) throw err;
     });
 }
-if (!fs.existsSync(path.resolve(__dirname + mailsPath))) {
+if (!fs.existsSync(path.resolve(__dirname, mailsPath))) {
     console.log("Mails file not found, creating...");
-    fs.writeFile(path.resolve(__dirname + mailsPath), "[]", (err) => {
+    fs.writeFile(path.resolve(__dirname, mailsPath), "[]", (err) => {
         if (err) throw err;
     });
 }
@@ -140,11 +140,9 @@ function compareStrings(blank, ...strings) {
 
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot || !(message.channel instanceof DMChannel)) return;
-    var mails = JSON.parse(
-        fs.readFileSync(path.resolve(__dirname + mailsPath))
-    );
+    var mails = JSON.parse(fs.readFileSync(path.resolve(__dirname, mailsPath)));
     var whitelist = JSON.parse(
-        fs.readFileSync(path.resolve(__dirname + wlPath))
+        fs.readFileSync(path.resolve(__dirname, wlPath))
     );
     if (whitelist.indexOf(message.author.id) != -1) {
         var mail = mails.filter((m) => m.takenBy == message.author.id);
@@ -192,9 +190,7 @@ client.on(Events.MessageCreate, async (message) => {
                 });
             } else {
                 message.channel.sendTyping();
-                await message.reply(
-                    "You already have an open mail request. Please wait until our team responds to you."
-                );
+                await message.reply(phrase.ALREADY_OPEN);
             }
         } else {
             message.channel.sendTyping();
@@ -207,12 +203,10 @@ client.on(Events.MessageCreate, async (message) => {
                 takenBy: null,
             });
             fs.writeFileSync(
-                path.resolve(__dirname + mailsPath),
+                path.resolve(__dirname, mailsPath),
                 JSON.stringify(mails)
             );
-            await message.reply(
-                "Your message has been received. Our team will get back to you as soon as possible."
-            );
+            await message.reply(phrase.MESSAGE_RECIEVED);
         }
     }
 });
@@ -232,19 +226,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
     switch (interaction.commandName) {
         case "close":
             var wl = JSON.parse(
-                fs.readFileSync(path.resolve(__dirname + wlPath))
+                fs.readFileSync(path.resolve(__dirname, wlPath))
             );
             var mails = JSON.parse(
-                fs.readFileSync(path.resolve(__dirname + mailsPath))
+                fs.readFileSync(path.resolve(__dirname, mailsPath))
             );
 
             if (wl.indexOf(interaction.user.id) == -1) {
                 return interaction.editReply({
                     embeds: [
                         new EmbedBuilder()
-                            .setTitle(
-                                "You have no permissions to run this command."
-                            )
+                            .setTitle(phrase.NO_PERMISSION)
                             .setColor(0xf00),
                     ],
                 });
@@ -256,7 +248,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     return interaction.editReply({
                         embeds: [
                             new EmbedBuilder()
-                                .setTitle("You have no taken mails.")
+                                .setTitle(phrase.NO_TAKEN_MAILS)
                                 .setColor(0xf00),
                         ],
                     });
@@ -264,16 +256,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     var user = await client.users.fetch(mail[0].from);
                     mails.splice(mails.indexOf(mail[0]), 1);
                     fs.writeFileSync(
-                        path.resolve(__dirname + mailsPath),
+                        path.resolve(__dirname, mailsPath),
                         JSON.stringify(mails)
                     );
                     user.send(
-                        `Your mail (ID: ${mail[0].id}) has been closed by <@${interaction.user.id}>. If you have further questions, feel free to open a new mail.`
+                        compareStrings(
+                            phrase.MAIL_CLOSED,
+                            mail[0].id,
+                            interaction.user.id
+                        )
                     );
                     return interaction.editReply({
                         embeds: [
                             new EmbedBuilder()
-                                .setTitle("Successfully closed the mail.")
+                                .setTitle(phrase.SUCCESS_CLOSE)
                                 .setColor(0x0f0),
                         ],
                     });
@@ -281,18 +277,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
             }
         case "respond":
             var wl = JSON.parse(
-                fs.readFileSync(path.resolve(__dirname + wlPath))
+                fs.readFileSync(path.resolve(__dirname, wlPath))
             );
             var mails = JSON.parse(
-                fs.readFileSync(path.resolve(__dirname + mailsPath))
+                fs.readFileSync(path.resolve(__dirname, mailsPath))
             );
             if (wl.indexOf(interaction.user.id) == -1) {
                 return interaction.editReply({
                     embeds: [
                         new EmbedBuilder()
-                            .setTitle(
-                                "You have no permissions to run this command."
-                            )
+                            .setTitle(phrase.NO_PERMISSION)
                             .setColor(0xf00),
                     ],
                 });
@@ -303,7 +297,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 return interaction.editReply({
                     embeds: [
                         new EmbedBuilder()
-                            .setTitle("Mail ID you entered has not found.")
+                            .setTitle(
+                                compareStrings(
+                                    phrase.MAIL_NOT_FOUND,
+                                    interaction.options.get("id").value
+                                )
+                            )
                             .setColor(0xf00),
                     ],
                 });
@@ -313,16 +312,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 var user = await client.users.fetch(mail.from);
                 mails[mails.indexOf(mail)].takenBy = interaction.user.id;
                 fs.writeFileSync(
-                    path.resolve(__dirname + mailsPath),
+                    path.resolve(__dirname, mailsPath),
                     JSON.stringify(mails)
                 );
                 user.send(
-                    `Your mail (ID: ${mail.id}) has been taken by <@${interaction.user.id}>. Please, wait for response.`
+                    compareStrings(
+                        phrase.MAIL_TAKEN_BY,
+                        mail.id,
+                        interaction.user.id
+                    )
                 );
                 return interaction.editReply({
                     embeds: [
                         new EmbedBuilder()
-                            .setTitle("Successfully responded to mail.")
+                            .setTitle(phrase.SUCCESS_RESPOND)
                             .setColor(0x0f0),
                     ],
                 });
@@ -330,21 +333,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
             break;
         case "mails":
             var wl = JSON.parse(
-                fs.readFileSync(path.resolve(__dirname + wlPath))
+                fs.readFileSync(path.resolve(__dirname, wlPath))
             );
             if (wl.indexOf(interaction.user.id) == -1) {
                 return interaction.editReply({
                     embeds: [
                         new EmbedBuilder()
-                            .setTitle(
-                                "You have no permissions to run this command."
-                            )
+                            .setTitle(phrase.NO_PERMISSION)
                             .setColor(0xf00),
                     ],
                 });
             } else {
                 var mails = JSON.parse(
-                    fs.readFileSync(path.resolve(__dirname + mailsPath))
+                    fs.readFileSync(path.resolve(__dirname, mailsPath))
                 );
 
                 mails = mails.filter((mail) => mail.takenBy == null);
@@ -353,7 +354,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     return interaction.editReply({
                         embeds: [
                             new EmbedBuilder()
-                                .setTitle("There are no available mails.")
+                                .setTitle(phrase.NO_MAILS)
                                 .setColor(0x0f0),
                         ],
                     });
@@ -370,17 +371,32 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 const embeds = mailChunks.map((chunk, index) => {
                     let embed = new EmbedBuilder()
                         .setTitle(
-                            `Mails (Page ${index + 1}/${mailChunks.length})`
+                            compareStrings(
+                                phrase.MAILS_PAGE_TITLE,
+                                index + 1,
+                                mailChunks.length
+                            )
                         )
                         .setColor(0x0f0);
                     chunk.forEach((mailId) => {
                         embed.addFields({
-                            name: `Mail ID: ${mails[mailId].id}`,
-                            value: `From: <@${mails[mailId].from}>\nSubject: ${
+                            name: compareStrings(
+                                phrase.MAIL_EMBED_TITLE,
+                                mails[mailId].id,
+                                getStatus(mails[mailId].status)
+                            ),
+                            value: `${compareStrings(
+                                phrase.MAIL_EMBED_FROM,
+                                mails[mailId].from
+                            )}\n${compareStrings(
+                                phrase.MAIL_EMBED_SUBJECT,
                                 mails[mailId].subject.length > 35
                                     ? mails[mailId].subject.slice(0, 33) + "..."
                                     : mails[mailId].subject
-                            }\nDate: <t:${mails[mailId].date}:R>`,
+                            )}\n${compareStrings(
+                                phrase.MAIL_EMBED_DATE,
+                                mails[mailId].date
+                            )}`,
                         });
                     });
                     return embed;
@@ -390,21 +406,23 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     return new ActionRowBuilder().addComponents(
                         new ButtonBuilder()
                             .setCustomId("prev")
-                            .setLabel("< Previous")
+                            .setLabel(phrase.PAGINATION_PREV)
                             .setStyle(ButtonStyle.Primary)
                             .setDisabled(currentPage == 0 ? true : false),
                         new ButtonBuilder()
                             .setCustomId("page_info")
                             .setLabel(
-                                `Page ${currentPage + 1} of ${
+                                compareStrings(
+                                    phrase.PAGINATION,
+                                    currentPage + 1,
                                     mailChunks.length
-                                }`
+                                )
                             )
                             .setStyle(ButtonStyle.Secondary)
                             .setDisabled(true),
                         new ButtonBuilder()
                             .setCustomId("next")
-                            .setLabel("Next >")
+                            .setLabel(phrase.PAGINATION_NEXT)
                             .setStyle(ButtonStyle.Primary)
                             .setDisabled(
                                 mailChunks.length - 1 == currentPage
@@ -425,7 +443,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     .on("collect", async (btnInt) => {
                         if (btnInt.user.id !== interaction.user.id) {
                             return btnInt.reply({
-                                content: "These buttons aren't for you!",
+                                content: phrase.NOT_AUTHOR,
                                 ephemeral: true,
                             });
                         }
@@ -443,7 +461,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             break;
         case "whitelist_add":
             let start = fs.readFileSync(
-                path.resolve(__dirname + wlPath),
+                path.resolve(__dirname, wlPath),
                 "utf-8"
             );
             try {
@@ -454,9 +472,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                         interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setTitle(
-                                        "This user is already in whitelist"
-                                    )
+                                    .setTitle(phrase.ALREADY_IN_WHITELIST)
                                     .setColor(0xff0000),
                             ],
                         });
@@ -466,14 +482,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 if (isStop) break;
                 let end = [interaction.options.get("user").value, ...start];
                 fs.writeFile(
-                    path.resolve(__dirname + wlPath),
+                    path.resolve(__dirname, wlPath),
                     JSON.stringify(end),
                     (err) => {
                         if (err) throw err;
                         interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setTitle("User added")
+                                    .setTitle(phrase.ADDED_TO_WHITELIST)
                                     .setColor(0x0f0),
                             ],
                         });
@@ -485,7 +501,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             break;
         case "whitelist_remove":
             let startt = fs.readFileSync(
-                path.resolve(__dirname + wlPath),
+                path.resolve(__dirname, wlPath),
                 "utf-8"
             );
             try {
@@ -496,7 +512,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     interaction.editReply({
                         embeds: [
                             new EmbedBuilder()
-                                .setTitle("This user is not in whitelist")
+                                .setTitle(phrase.NOT_IN_WHITELIST)
                                 .setColor(0xff0000),
                         ],
                     });
@@ -508,14 +524,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     1
                 );
                 fs.writeFile(
-                    path.resolve(__dirname + wlPath),
+                    path.resolve(__dirname, wlPath),
                     JSON.stringify(startt),
                     (err) => {
                         if (err) throw err;
                         interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setTitle("User removed")
+                                    .setTitle(phrase.REMOVED_FROM_WHITELIST)
                                     .setColor(0x0f0),
                             ],
                         });
