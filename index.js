@@ -13,6 +13,8 @@ const {
     SlashCommandNumberOption,
     SlashCommandBooleanOption,
     DMChannel,
+    SlashCommandStringOption,
+    SlashCommandSubcommandBuilder,
 } = require("discord.js");
 const client = new Client({
     intents: [
@@ -73,33 +75,62 @@ const commands = [
                 .setName("id")
                 .setDescription("Mail ID")
         ),
+    new SlashCommandBuilder()
+        .setName("logs")
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDescription("Get logs for a mail")
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName("export")
+                .setDescription("Export logs for a mail")
+                .addNumberOption(
+                    new SlashCommandNumberOption()
+                        .setRequired(true)
+                        .setName("id")
+                        .setDescription("Mail ID")
+                )
+        )
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName("info")
+                .setDescription("Get info about a mail")
+                .addNumberOption(
+                    new SlashCommandNumberOption()
+                        .setRequired(true)
+                        .setName("id")
+                        .setDescription("Mail ID")
+                )
+        ),
 ];
 
-commands.forEach((c) => {
-    c.addBooleanOption(
-        new SlashCommandBooleanOption()
-            .setName("ephemeral")
-            .setDescription("Ephemeral Reply (default = true)")
-            .setRequired(false)
-    );
-});
-
-if (!fs.existsSync(path.resolve(__dirname, "/data"))) {
-    fs.mkdir(path.resolve(__dirname, "/data"), (err) => {
+if (!fs.existsSync(path.resolve(__dirname, "./data"))) {
+    fs.mkdir(path.resolve(__dirname, "./data"), (err) => {
+        if (err) throw err;
+    });
+}
+if (!fs.existsSync(path.resolve(__dirname, "./logs"))) {
+    fs.mkdir(path.resolve(__dirname, "./logs"), (err) => {
         if (err) throw err;
     });
 }
 if (!fs.existsSync(path.resolve(__dirname, wlPath))) {
     console.log("Whitelist file not found, creating...");
-    fs.writeFile(path.resolve(__dirname, wlPath), "[]", (err) => {
-        if (err) throw err;
-    });
+    fs.writeFileSync(path.resolve(__dirname, wlPath), "[]");
 }
 if (!fs.existsSync(path.resolve(__dirname, mailsPath))) {
     console.log("Mails file not found, creating...");
-    fs.writeFile(path.resolve(__dirname, mailsPath), "[]", (err) => {
-        if (err) throw err;
-    });
+    fs.writeFileSync(path.resolve(__dirname, mailsPath), "[]");
+}
+
+function getStatus(code) {
+    switch (code) {
+        case 0:
+            return phrase.STATUS_OPEN;
+        case 1:
+            return phrase.STATUS_PENDING;
+        default:
+            return phrase.STATUS_UNKNOWN;
+    }
 }
 
 if (!TOKEN || !CLIENT_ID) {
@@ -138,6 +169,59 @@ function compareStrings(blank, ...strings) {
     return res;
 }
 
+const logTools = {
+    convertContent: (user, content) => {
+        const date = new Date().toLocaleTimeString();
+        const prefixBase = `[${date}] ${user.tag} >`;
+        const pad = " ".repeat(prefixBase.length + 1);
+        const wrapWidth = 50;
+
+        const lines = content
+            .split("\n")
+            .filter((line) => line.trim().length > 0);
+
+        const formattedLines = lines.map((line, index) => {
+            const start = index === 0 ? prefixBase + " " : pad;
+            const wrapRegex = new RegExp(
+                `(?![^\\n]{1,${wrapWidth}}$)([^\\n]{1,${wrapWidth}})\\s`,
+                "g"
+            );
+
+            const wrappedLine = line.replace(wrapRegex, `$1\n${pad}`);
+
+            return start + wrappedLine;
+        });
+
+        return formattedLines.join("\n");
+    },
+    writeLog: (mailId, date, content) => {
+        fs.appendFileSync(
+            path.resolve(__dirname, "./logs/" + mailId + "-" + date + ".txt"),
+            "\n" + content
+        );
+    },
+};
+
+function generateUniqueId(d) {
+    const chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    function generate() {
+        for (let i = 0; i < 12; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        if (
+            fs.existsSync(
+                path.resolve(__dirname, "./logs/" + result + "-" + d + ".txt")
+            )
+        ) {
+            result = "";
+            generate();
+        } else return result;
+    }
+    return generate();
+}
+
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot || !(message.channel instanceof DMChannel)) return;
     var mails = JSON.parse(fs.readFileSync(path.resolve(__dirname, mailsPath)));
@@ -148,6 +232,11 @@ client.on(Events.MessageCreate, async (message) => {
         var mail = mails.filter((m) => m.takenBy == message.author.id);
         if (mail.length > 0 && mail[0].from) {
             var user = await client.users.fetch(mail[0].from);
+            logTools.writeLog(
+                mail[0].id,
+                mail[0].date,
+                logTools.convertContent(message.author, message.content)
+            );
             return user.send({
                 embeds: [
                     new EmbedBuilder()
@@ -170,6 +259,7 @@ client.on(Events.MessageCreate, async (message) => {
     } else {
         if (mails.filter((m) => m.from == message.author.id).length > 0) {
             var mail = mails.filter((m) => m.from == message.author.id);
+            console.log(mail);
             if (mail[0].takenBy != null) {
                 var mod = await client.users.fetch(mail[0].takenBy);
                 mod.send({
@@ -178,7 +268,7 @@ client.on(Events.MessageCreate, async (message) => {
                             .setDescription(message.content)
                             .setAuthor({
                                 name: compareStrings(
-                                    phrase.RESPONSE_FROM,
+                                    phrase.RESPONSE_FROM_ID,
                                     message.author.tag,
                                     mail[0].id
                                 ),
@@ -188,6 +278,11 @@ client.on(Events.MessageCreate, async (message) => {
                             .setTimestamp(),
                     ],
                 });
+                logTools.writeLog(
+                    mail[0].id,
+                    mail[0].date,
+                    logTools.convertContent(message.author, message.content)
+                );
             } else {
                 message.channel.sendTyping();
                 await message.reply(phrase.ALREADY_OPEN);
@@ -198,13 +293,29 @@ client.on(Events.MessageCreate, async (message) => {
                 id: mails.length == 0 ? 1 : mails[mails.length - 1].id + 1,
                 from: message.author.id,
                 subject: message.content,
-                status: 0,
                 date: Math.floor(Date.now() / 1000),
                 takenBy: null,
             });
             fs.writeFileSync(
                 path.resolve(__dirname, mailsPath),
                 JSON.stringify(mails)
+            );
+
+            fs.writeFileSync(
+                path.resolve(
+                    __dirname,
+                    "./logs/" +
+                        (mails.length == 0 ? 1 : mails[mails.length - 1].id) +
+                        "-" +
+                        Math.floor(Date.now() / 1000) +
+                        ".txt"
+                ),
+                " - Mail opened by " +
+                    message.author.tag +
+                    " (ID: " +
+                    message.author.id +
+                    ")\n\n" +
+                    logTools.convertContent(message.author, message.content)
             );
             await message.reply(phrase.MESSAGE_RECIEVED);
         }
@@ -213,14 +324,7 @@ client.on(Events.MessageCreate, async (message) => {
 
 client.on(Events.InteractionCreate, async (interaction) => {
     if (interaction.isChatInputCommand()) {
-        if (
-            !interaction.options.get("ephemeral") ||
-            interaction.options.get("ephemeral")?.value == true
-        ) {
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-        } else {
-            await interaction.deferReply();
-        }
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     }
 
     switch (interaction.commandName) {
@@ -254,7 +358,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     });
                 } else {
                     var user = await client.users.fetch(mail[0].from);
-                    mails.splice(mails.indexOf(mail[0]), 1);
+                    mails[mails.indexOf(mail[0])].takenBy += "-";
+                    mails[mails.indexOf(mail[0])].from += "-";
+
                     fs.writeFileSync(
                         path.resolve(__dirname, mailsPath),
                         JSON.stringify(mails)
@@ -265,6 +371,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
                             mail[0].id,
                             interaction.user.id
                         )
+                    );
+                    logTools.writeLog(
+                        mail[0].id,
+                        mail[0].date,
+                        `\n[${new Date().toLocaleTimeString()}] - Closed by ` +
+                            interaction.user.tag +
+                            " (ID: " +
+                            interaction.user.id +
+                            "). \n"
                     );
                     return interaction.editReply({
                         embeds: [
@@ -306,10 +421,35 @@ client.on(Events.InteractionCreate, async (interaction) => {
                             .setColor(0xf00),
                     ],
                 });
+            } else if (
+                mails.filter((m) => m.takenBy == interaction.user.id).length > 0
+            ) {
+                return interaction.editReply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle(phrase.ALREADY_TAKEN_ANOTHER)
+                            .setColor(0xf00),
+                    ],
+                });
+            } else if (
+                mails.filter(
+                    (m) => m.id == interaction.options.get("id").value
+                )[0].takenBy != null
+            ) {
+                return interaction.editReply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle(phrase.MAIL_ALREADY_TAKEN)
+                            .setColor(0xf00),
+                    ],
+                });
             } else {
                 var id = interaction.options.get("id").value;
                 var mail = mails.filter((m) => m.id == id)[0];
+                console.log(mails);
+                console.log(mail);
                 var user = await client.users.fetch(mail.from);
+
                 mails[mails.indexOf(mail)].takenBy = interaction.user.id;
                 fs.writeFileSync(
                     path.resolve(__dirname, mailsPath),
@@ -322,15 +462,32 @@ client.on(Events.InteractionCreate, async (interaction) => {
                         interaction.user.id
                     )
                 );
+
+                logTools.writeLog(
+                    mail.id,
+                    mail.date,
+                    `\n[${new Date().toLocaleTimeString()}] - ` +
+                        interaction.user.tag +
+                        " (ID: " +
+                        interaction.user.id +
+                        ") responded. \n"
+                );
+
                 return interaction.editReply({
                     embeds: [
                         new EmbedBuilder()
                             .setTitle(phrase.SUCCESS_RESPOND)
+                            .setDescription(
+                                compareStrings(
+                                    phrase.SUCCESS_RESPOND_DESC,
+                                    mail.from,
+                                    mail.subject
+                                )
+                            )
                             .setColor(0x0f0),
                     ],
                 });
             }
-            break;
         case "mails":
             var wl = JSON.parse(
                 fs.readFileSync(path.resolve(__dirname, wlPath))
@@ -348,7 +505,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     fs.readFileSync(path.resolve(__dirname, mailsPath))
                 );
 
-                mails = mails.filter((mail) => mail.takenBy == null);
+                mails = mails.filter(
+                    (m) =>
+                        m.takenBy == null ||
+                        m.takenBy[m.takenBy?.length - 1] != "-"
+                );
 
                 if (mails.length == 0) {
                     return interaction.editReply({
@@ -383,7 +544,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
                             name: compareStrings(
                                 phrase.MAIL_EMBED_TITLE,
                                 mails[mailId].id,
-                                getStatus(mails[mailId].status)
+                                mails[mailId].takenBy == null
+                                    ? getStatus(0)
+                                    : getStatus(1)
                             ),
                             value: `${compareStrings(
                                 phrase.MAIL_EMBED_FROM,
@@ -413,7 +576,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                             .setCustomId("page_info")
                             .setLabel(
                                 compareStrings(
-                                    phrase.PAGINATION,
+                                    phrase.PAGINATION_CURRENT,
                                     currentPage + 1,
                                     mailChunks.length
                                 )
@@ -460,6 +623,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
             }
             break;
         case "whitelist_add":
+            if (interaction.channel instanceof DMChannel)
+                return interaction.editReply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle(phrase.DM_CHANNEL_NOT_ALLOWED)
+                            .setColor(0xf00),
+                    ],
+                });
+
             let start = fs.readFileSync(
                 path.resolve(__dirname, wlPath),
                 "utf-8"
@@ -500,6 +672,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
             }
             break;
         case "whitelist_remove":
+            if (interaction.channel instanceof DMChannel)
+                return interaction.editReply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle(phrase.DM_CHANNEL_NOT_ALLOWED)
+                            .setColor(0xf00),
+                    ],
+                });
+
             let startt = fs.readFileSync(
                 path.resolve(__dirname, wlPath),
                 "utf-8"
@@ -539,6 +720,136 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 );
             } catch (e) {
                 throw new Error(e);
+            }
+            break;
+        case "logs":
+            switch (interaction.options.getSubcommand()) {
+                case "export":
+                    var mails = JSON.parse(
+                        fs.readFileSync(path.resolve(__dirname, mailsPath))
+                    );
+                    var mail = mails.filter(
+                        (m) => m.id == interaction.options.get("id").value
+                    )[0];
+                    if (!mail) {
+                        return interaction.editReply({
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setTitle(
+                                        compareStrings(
+                                            phrase.MAIL_NOT_FOUND,
+                                            interaction.options.get("id").value
+                                        )
+                                    )
+                                    .setColor(0xf00),
+                            ],
+                        });
+                    } else {
+                        const logFilePath = path.resolve(
+                            __dirname,
+                            `./logs/${mail.id}-${mail.date}.txt`
+                        );
+                        if (fs.existsSync(logFilePath)) {
+                            await interaction.editReply({
+                                files: [logFilePath],
+                            });
+                        } else {
+                            return interaction.editReply({
+                                embeds: [
+                                    new EmbedBuilder()
+                                        .setTitle(phrase.LOG_FILE_NOT_FOUND)
+                                        .setColor(0xf00),
+                                ],
+                            });
+                        }
+                    }
+                    break;
+                case "info":
+                    var mails = JSON.parse(
+                        fs.readFileSync(path.resolve(__dirname, mailsPath))
+                    );
+                    var mail = mails.filter(
+                        (m) => m.id == interaction.options.get("id").value
+                    )[0];
+                    if (!mail) {
+                        return interaction.editReply({
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setTitle(
+                                        compareStrings(
+                                            phrase.MAIL_NOT_FOUND,
+                                            interaction.options.get("id").value
+                                        )
+                                    )
+                                    .setColor(0xf00),
+                            ],
+                        });
+                    } else {
+                        const logFilePath = path.resolve(
+                            __dirname,
+                            `./logs/${mail.id}-${mail.date}.txt`
+                        );
+                        if (fs.existsSync(logFilePath)) {
+                            await interaction.editReply({
+                                embeds: [
+                                    new EmbedBuilder()
+                                        .setTitle(
+                                            compareStrings(
+                                                phrase.LOG_INFO_TITLE,
+                                                mail.id
+                                            )
+                                        )
+                                        .setDescription(
+                                            phrase.LOG_INFO_SUBJECT +
+                                                mail.subject
+                                        )
+                                        .addFields(
+                                            {
+                                                name: phrase.LOG_INFO_FROM,
+                                                value: `<@${mail.from.replace(
+                                                    "-",
+                                                    ""
+                                                )}>`,
+                                                inline: true,
+                                            },
+                                            {
+                                                name: phrase.LOG_INFO_TAKEN_BY,
+                                                value: mail.takenBy
+                                                    ? `<@${mail.takenBy.replace(
+                                                          "-",
+                                                          ""
+                                                      )}>`
+                                                    : phrase.LOG_INFO_NOT_TAKEN,
+                                                inline: true,
+                                            },
+                                            {
+                                                name: phrase.LOG_INFO_DATE,
+                                                value: `<t:${mail.date}:F>`,
+                                                inline: false,
+                                            }
+                                        )
+                                        .setColor(0x0f0),
+                                ],
+                            });
+                        } else {
+                            return interaction.editReply({
+                                embeds: [
+                                    new EmbedBuilder()
+                                        .setTitle(phrase.LOG_FILE_NOT_FOUND)
+                                        .setColor(0xf00),
+                                ],
+                            });
+                        }
+                    }
+                    break;
+                default:
+                    return interaction.editReply({
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle(phrase.INVALID_ACTION)
+                                .setColor(0xf00),
+                        ],
+                    });
             }
             break;
     }

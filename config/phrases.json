@@ -12,13 +12,25 @@
     "MAIL_NOT_FOUND": "A mail with ID %s has not found.",
     "MAIL_TAKEN_BY": "Your mail (ID: %s) has been taken by <@%s>. Please, wait for response.",
     "NO_MAILS": "There are no available mails.",
+    "MAIL_ALREADY_TAKEN": "You can't respond to this mail because someone else has already taken it or it's closed.",
+    "ALREADY_TAKEN_ANOTHER": "You have already taken another mail. Please, respond to it or close it before taking a new one.",
+    "INVALID_ACTION": "Invalid action.",
+
+    "LOG_INFO_FROM": "From:",
+    "LOG_INFO_SUBJECT": "Subject:\n",
+    "LOG_INFO_DATE": "Date:",
+    "LOG_INFO_TAKEN_BY": "Taken by:",
+    "LOG_INFO_TITLE": "Mail Log - ID %s",
+
+    "LOG_EXPORTING": "Exporting logs for mail ID %s...",
+    "LOG_FILE_NOT_FOUND": "Unable to find log file for mail ID %s.",
 
     "MAILS_PAGE_TITLE": "Mails (Page %s/%s)",
 
     "MAIL_EMBED_TITLE": "Mail ID: %s | Status: %s",
     "MAIL_EMBED_FROM": "From: <@%s>",
     "MAIL_EMBED_SUBJECT": "Subject: %s",
-    "MAIL_EMBED_DATE": "Date: <t:%s:R>`",
+    "MAIL_EMBED_DATE": "Date: <t:%s:R>",
     "MAIL_EMBED_STATUS": "Status: %s",
 
     "PAGINATION_PREV": "< Previous",
@@ -30,5 +42,12 @@
     "ALREADY_IN_WHITELIST": "This user is already in whitelist",
     "ADDED_TO_WHITELIST": "Successfully added user to whitelist",
     "REMOVED_FROM_WHITELIST": "Successfully removed user from whitelist",
-    "NOT_IN_WHITELIST": "This user is not in whitelist"
+    "NOT_IN_WHITELIST": "This user is not in whitelist",
+    "DM_CHANNEL_NOT_ALLOWED": "This command cannot be used in DMs.",
+
+    "STATUS_OPEN": "🟢 Open",
+    "STATUS_UNKNOWN": "N/D",
+    "STATUS_PENDING": "🔴 Taken",
+
+    "SUCCESS_RESPOND_DESC": "<@%s> send a subject:\n\n%s"
 }
