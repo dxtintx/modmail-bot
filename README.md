@@ -4,6 +4,8 @@ Also on: **English**, [Українська](./docs/README.uk.md), [російс
 
 ### Demo
 
+Coming soon
+
 ## Usage
 
 A lightweight ModMail bot for Discord. Use this guide to install, configure, and run the bot.
