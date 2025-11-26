@@ -1,6 +1,6 @@
 # ModMail Bot
 
-Also on: **English**, [Українська](./docs/README.uk.md), [російська](./docs/README.ru.md)
+Also on: **English**, [Українська](./docs/README.uk.md), [русский](./docs/README.ru.md)
 
 ### Demo
 
