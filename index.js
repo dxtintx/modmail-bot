@@ -11,9 +11,7 @@ const {
     MessageFlags,
     Partials,
     SlashCommandNumberOption,
-    SlashCommandBooleanOption,
     DMChannel,
-    SlashCommandStringOption,
     SlashCommandSubcommandBuilder,
 } = require("discord.js");
 const client = new Client({
@@ -25,7 +23,7 @@ const client = new Client({
     ],
     partials: [Partials.Channel],
 });
-const phrase = require("./config/phrases.json");
+let phrase;
 const fs = require("fs");
 const path = require("path");
 const [wlPath, mailsPath] = ["./data/whitelist.json", "./data/mails.json"];
@@ -43,28 +41,42 @@ const commands = [
         .setName("close")
         .setDescription("Close taken mail"),
     new SlashCommandBuilder()
-        .setName("whitelist_add")
-        .setDescription(
-            "Add user to whitelist and making him able to have access to this server's mail"
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .addUserOption(
-            new SlashCommandUserOption()
-                .setName("user")
-                .setDescription("User")
-                .setRequired(true)
-        ),
+        .setName("how-to-use")
+        .setDescription("How to use the modmail bot"),
     new SlashCommandBuilder()
-        .setName("whitelist_remove")
-        .setDescription(
-            "Remove user from whitelist and making him not able to have access to this server's mail"
-        )
+        .setName("whitelist")
+        .setDescription("Manage whitelist commands")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .addUserOption(
-            new SlashCommandUserOption()
-                .setName("user")
-                .setDescription("User")
-                .setRequired(true)
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName("add")
+                .setDescription(
+                    "Add user to whitelist and making him able to have access to this server's mail"
+                )
+                .addUserOption(
+                    new SlashCommandUserOption()
+                        .setName("user")
+                        .setDescription("User")
+                        .setRequired(true)
+                )
+        )
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName("remove")
+                .setDescription(
+                    "Remove user from whitelist and making him not able to have access to this server's mail"
+                )
+                .addUserOption(
+                    new SlashCommandUserOption()
+                        .setName("user")
+                        .setDescription("User")
+                        .setRequired(true)
+                )
+        )
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName("list")
+                .setDescription("Get all whitelisted users in this server")
         ),
     new SlashCommandBuilder()
         .setName("respond")
@@ -174,7 +186,6 @@ const logTools = {
         const date = new Date().toLocaleTimeString();
         const prefixBase = `[${date}] ${user.tag} >`;
         const pad = " ".repeat(prefixBase.length + 1);
-        const wrapWidth = 50;
 
         const lines = content
             .split("\n")
@@ -183,7 +194,7 @@ const logTools = {
         const formattedLines = lines.map((line, index) => {
             const start = index === 0 ? prefixBase + " " : pad;
             const wrapRegex = new RegExp(
-                `(?![^\\n]{1,${wrapWidth}}$)([^\\n]{1,${wrapWidth}})\\s`,
+                `(?![^\\n]{1,${50}}$)([^\\n]{1,${50}})\\s`,
                 "g"
             );
 
@@ -201,26 +212,6 @@ const logTools = {
         );
     },
 };
-
-function generateUniqueId(d) {
-    const chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    function generate() {
-        for (let i = 0; i < 12; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        if (
-            fs.existsSync(
-                path.resolve(__dirname, "./logs/" + result + "-" + d + ".txt")
-            )
-        ) {
-            result = "";
-            generate();
-        } else return result;
-    }
-    return generate();
-}
 
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot || !(message.channel instanceof DMChannel)) return;
@@ -323,6 +314,9 @@ client.on(Events.MessageCreate, async (message) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+    delete require.cache[require.resolve("./config/phrases.json")];
+    phrase = require("./config/phrases.json");
+
     if (interaction.isChatInputCommand()) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     }
@@ -622,106 +616,172 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     });
             }
             break;
-        case "whitelist_add":
-            if (interaction.channel instanceof DMChannel)
-                return interaction.editReply({
-                    embeds: [
-                        new EmbedBuilder()
-                            .setTitle(phrase.DM_CHANNEL_NOT_ALLOWED)
-                            .setColor(0xf00),
-                    ],
-                });
-
-            let start = fs.readFileSync(
-                path.resolve(__dirname, wlPath),
-                "utf-8"
-            );
-            try {
-                start = JSON.parse(start);
-                var isStop = false;
-                start.forEach((e) => {
-                    if (e == interaction.options.get("user").value) {
-                        interaction.editReply({
+        case "how-to-use":
+            return interaction.editReply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setTitle(phrase.HOW_TO_USE_TITLE)
+                        .setDescription(phrase.HOW_TO_USE_DESC)
+                        .setColor(0x0f0),
+                ],
+            });
+            break;
+        case "whitelist":
+            switch (interaction.options.getSubcommand()) {
+                case "list":
+                    if (interaction.channel instanceof DMChannel)
+                        return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setTitle(phrase.ALREADY_IN_WHITELIST)
-                                    .setColor(0xff0000),
+                                    .setTitle(phrase.DM_CHANNEL_NOT_ALLOWED)
+                                    .setColor(0xf00),
                             ],
                         });
-                        isStop = true;
-                    }
-                });
-                if (isStop) break;
-                let end = [interaction.options.get("user").value, ...start];
-                fs.writeFile(
-                    path.resolve(__dirname, wlPath),
-                    JSON.stringify(end),
-                    (err) => {
-                        if (err) throw err;
-                        interaction.editReply({
+                    let whitelist = fs.readFileSync(
+                        path.resolve(__dirname, wlPath),
+                        "utf-8"
+                    );
+                    try {
+                        whitelist = JSON.parse(whitelist);
+                        if (whitelist.length == 0) {
+                            return interaction.editReply({
+                                embeds: [
+                                    new EmbedBuilder()
+                                        .setTitle(phrase.WHITELIST_EMPTY)
+                                        .setColor(0x0f0),
+                                ],
+                            });
+                        }
+                        let desc = "";
+                        for (let i = 0; i < whitelist.length; i++) {
+                            let user = await client.users.fetch(whitelist[i]);
+                            desc += `**${i + 1}.** ${user.tag} (ID: ${
+                                whitelist[i]
+                            })\n`;
+                        }
+                        return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setTitle(phrase.ADDED_TO_WHITELIST)
+                                    .setTitle(phrase.WHITELIST_USERS)
+                                    .setDescription(desc)
                                     .setColor(0x0f0),
                             ],
                         });
+                    } catch (e) {
+                        throw new Error(e);
                     }
-                );
-            } catch (e) {
-                throw new Error(e);
-            }
-            break;
-        case "whitelist_remove":
-            if (interaction.channel instanceof DMChannel)
-                return interaction.editReply({
-                    embeds: [
-                        new EmbedBuilder()
-                            .setTitle(phrase.DM_CHANNEL_NOT_ALLOWED)
-                            .setColor(0xf00),
-                    ],
-                });
+                case "add":
+                    if (interaction.channel instanceof DMChannel)
+                        return interaction.editReply({
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setTitle(phrase.DM_CHANNEL_NOT_ALLOWED)
+                                    .setColor(0xf00),
+                            ],
+                        });
 
-            let startt = fs.readFileSync(
-                path.resolve(__dirname, wlPath),
-                "utf-8"
-            );
-            try {
-                startt = JSON.parse(startt);
-                if (
-                    startt.indexOf(interaction.options.get("user").value) == -1
-                ) {
-                    interaction.editReply({
-                        embeds: [
-                            new EmbedBuilder()
-                                .setTitle(phrase.NOT_IN_WHITELIST)
-                                .setColor(0xff0000),
-                        ],
-                    });
+                    let start = fs.readFileSync(
+                        path.resolve(__dirname, wlPath),
+                        "utf-8"
+                    );
+                    try {
+                        start = JSON.parse(start);
+                        var isStop = false;
+                        start.forEach((e) => {
+                            if (e == interaction.options.get("user").value) {
+                                interaction.editReply({
+                                    embeds: [
+                                        new EmbedBuilder()
+                                            .setTitle(
+                                                phrase.ALREADY_IN_WHITELIST
+                                            )
+                                            .setColor(0xff0000),
+                                    ],
+                                });
+                                isStop = true;
+                            }
+                        });
+                        if (isStop) break;
+                        let end = [
+                            interaction.options.get("user").value,
+                            ...start,
+                        ];
+                        fs.writeFile(
+                            path.resolve(__dirname, wlPath),
+                            JSON.stringify(end),
+                            (err) => {
+                                if (err) throw err;
+                                interaction.editReply({
+                                    embeds: [
+                                        new EmbedBuilder()
+                                            .setTitle(phrase.ADDED_TO_WHITELIST)
+                                            .setColor(0x0f0),
+                                    ],
+                                });
+                            }
+                        );
+                    } catch (e) {
+                        throw new Error(e);
+                    }
                     break;
-                }
-
-                startt.splice(
-                    startt.indexOf(interaction.options.get("user").value),
-                    1
-                );
-                fs.writeFile(
-                    path.resolve(__dirname, wlPath),
-                    JSON.stringify(startt),
-                    (err) => {
-                        if (err) throw err;
-                        interaction.editReply({
+                case "remove":
+                    if (interaction.channel instanceof DMChannel)
+                        return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setTitle(phrase.REMOVED_FROM_WHITELIST)
-                                    .setColor(0x0f0),
+                                    .setTitle(phrase.DM_CHANNEL_NOT_ALLOWED)
+                                    .setColor(0xf00),
                             ],
                         });
+
+                    let startt = fs.readFileSync(
+                        path.resolve(__dirname, wlPath),
+                        "utf-8"
+                    );
+                    try {
+                        startt = JSON.parse(startt);
+                        if (
+                            startt.indexOf(
+                                interaction.options.get("user").value
+                            ) == -1
+                        ) {
+                            interaction.editReply({
+                                embeds: [
+                                    new EmbedBuilder()
+                                        .setTitle(phrase.NOT_IN_WHITELIST)
+                                        .setColor(0xff0000),
+                                ],
+                            });
+                            break;
+                        }
+
+                        startt.splice(
+                            startt.indexOf(
+                                interaction.options.get("user").value
+                            ),
+                            1
+                        );
+                        fs.writeFile(
+                            path.resolve(__dirname, wlPath),
+                            JSON.stringify(startt),
+                            (err) => {
+                                if (err) throw err;
+                                interaction.editReply({
+                                    embeds: [
+                                        new EmbedBuilder()
+                                            .setTitle(
+                                                phrase.REMOVED_FROM_WHITELIST
+                                            )
+                                            .setColor(0x0f0),
+                                    ],
+                                });
+                            }
+                        );
+                    } catch (e) {
+                        throw new Error(e);
                     }
-                );
-            } catch (e) {
-                throw new Error(e);
+                    break;
             }
-            break;
         case "logs":
             switch (interaction.options.getSubcommand()) {
                 case "export":

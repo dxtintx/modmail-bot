@@ -15,6 +15,8 @@
     "MAIL_ALREADY_TAKEN": "You can't respond to this mail because someone else has already taken it or it's closed.",
     "ALREADY_TAKEN_ANOTHER": "You have already taken another mail. Please, respond to it or close it before taking a new one.",
     "INVALID_ACTION": "Invalid action.",
+    "WHITELIST_EMPTY": "The whitelist is currently empty.",
+    "WHITELIST_USERS": "Whitelisted users:",
 
     "LOG_INFO_FROM": "From:",
     "LOG_INFO_SUBJECT": "Subject:\n",
@@ -49,5 +51,8 @@
     "STATUS_UNKNOWN": "N/D",
     "STATUS_PENDING": "🔴 Taken",
 
-    "SUCCESS_RESPOND_DESC": "<@%s> send a subject:\n\n%s"
+    "SUCCESS_RESPOND_DESC": "<@%s> send a subject:\n\n%s",
+
+    "HOW_TO_USE_TITLE": "How to use the Modmail Bot",
+    "HOW_TO_USE_DESC": "Welcome to the Modmail Bot! Here's a quick guide on how to use the bot effectively:\n\n1. **Opening a Mail**: To open a new mail, simply send a message to the bot with your query or concern. The bot will create a new mail ticket for you.\n\n**For server ADMINS and WHITELISTED users:**\n2. **Viewing Mails**: Use the `/mails` command to view all your open mails. You can navigate through pages if you have multiple mails.\n\n3. **Responding to Mails**: To respond to a mail, use the `/respond` command followed by the mail ID and your message. This will send your response to the support team handling your mail.\n\n4. **Closing Mails**: Once your issue is resolved, you can close the mail using the `/close` command followed by the mail ID. This will mark the mail as closed.\n\n5. **Whitelist Management**: If you have permissions, you can manage the whitelist using the `/whitelist` command to add or remove users who can access certain features of the bot.\n\nIf you need further assistance, feel free to reach out to our support team!"
 }

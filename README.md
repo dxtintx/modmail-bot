@@ -43,7 +43,7 @@ npm start
 
 ### Permissions & Roles
 
-All commands (except /faq) can be used by users which ids are in whitelist.
+All commands (except /how-to-use) can be used by users which ids are in whitelist.
 Only server admin can manage whitelist using commands `/whitelist add` or `/whitelist remove`
 
 ### Example workflow
