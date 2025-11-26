@@ -2,10 +2,6 @@
 
 Also on: **English**, [Українська](./docs/README.uk.md), [русский](./docs/README.ru.md)
 
-### Demo
-
-Coming soon
-
 ## Usage
 
 A lightweight ModMail bot for Discord. Use this guide to install, configure, and run the bot.
@@ -43,7 +39,7 @@ npm start
 
 ### Permissions & Roles
 
-All commands (except /how-to-use) can be used by users which ids are in whitelist.
+All commands (except `/how-to-use`) can be used by users which ids are in whitelist.
 Only server admin can manage whitelist using commands `/whitelist add` or `/whitelist remove`
 
 ### Example workflow
