@@ -25,6 +25,7 @@ const client = new Client({
     partials: [Partials.Channel],
 });
 let phrase;
+let misc;
 const fs = require("fs");
 const path = require("path");
 const [wlPath, mailsPath] = ["./data/whitelist.json", "./data/mails.json"];
@@ -239,7 +240,7 @@ client.on(Events.MessageCreate, async (message) => {
                             ),
                             iconURL: message.author.displayAvatarURL(),
                         })
-                        .setColor(0x0f0)
+                        .setColor(misc.embeds.colors.success)
                         .setTimestamp(),
                 ],
             });
@@ -265,7 +266,7 @@ client.on(Events.MessageCreate, async (message) => {
                                 ),
                                 iconURL: message.author.displayAvatarURL(),
                             })
-                            .setColor(0x0f0)
+                            .setColor(misc.embeds.colors.success)
                             .setTimestamp(),
                     ],
                 });
@@ -315,7 +316,9 @@ client.on(Events.MessageCreate, async (message) => {
 
 client.on(Events.InteractionCreate, async (interaction) => {
     delete require.cache[require.resolve("./config/phrases.json")];
+    delete require.cache[require.resolve("./config/misc.json")];
     phrase = require("./config/phrases.json");
+    misc = require("./config/misc.json");
 
     if (interaction.isChatInputCommand()) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -335,7 +338,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     embeds: [
                         new EmbedBuilder()
                             .setTitle(phrase.NO_PERMISSION)
-                            .setColor(0xf00),
+                            .setColor(misc.embeds.colors.error),
                     ],
                 });
             } else {
@@ -347,7 +350,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                         embeds: [
                             new EmbedBuilder()
                                 .setTitle(phrase.NO_TAKEN_MAILS)
-                                .setColor(0xf00),
+                                .setColor(misc.embeds.colors.error),
                         ],
                     });
                 } else {
@@ -379,7 +382,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                         embeds: [
                             new EmbedBuilder()
                                 .setTitle(phrase.SUCCESS_CLOSE)
-                                .setColor(0x0f0),
+                                .setColor(misc.embeds.colors.success),
                         ],
                     });
                 }
@@ -396,7 +399,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     embeds: [
                         new EmbedBuilder()
                             .setTitle(phrase.NO_PERMISSION)
-                            .setColor(0xf00),
+                            .setColor(misc.embeds.colors.error),
                     ],
                 });
             } else if (
@@ -412,7 +415,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                     interaction.options.get("id").value
                                 )
                             )
-                            .setColor(0xf00),
+                            .setColor(misc.embeds.colors.error),
                     ],
                 });
             } else if (
@@ -422,7 +425,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     embeds: [
                         new EmbedBuilder()
                             .setTitle(phrase.ALREADY_TAKEN_ANOTHER)
-                            .setColor(0xf00),
+                            .setColor(misc.embeds.colors.error),
                     ],
                 });
             } else if (
@@ -434,7 +437,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     embeds: [
                         new EmbedBuilder()
                             .setTitle(phrase.MAIL_ALREADY_TAKEN)
-                            .setColor(0xf00),
+                            .setColor(misc.embeds.colors.error),
                     ],
                 });
             } else {
@@ -478,7 +481,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                     mail.subject
                                 )
                             )
-                            .setColor(0x0f0),
+                            .setColor(misc.embeds.colors.success),
                     ],
                 });
             }
@@ -491,7 +494,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     embeds: [
                         new EmbedBuilder()
                             .setTitle(phrase.NO_PERMISSION)
-                            .setColor(0xf00),
+                            .setColor(misc.embeds.colors.error),
                     ],
                 });
             } else {
@@ -510,7 +513,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                         embeds: [
                             new EmbedBuilder()
                                 .setTitle(phrase.NO_MAILS)
-                                .setColor(0x0f0),
+                                .setColor(misc.embeds.colors.success),
                         ],
                     });
                 }
@@ -532,7 +535,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                 mailChunks.length
                             )
                         )
-                        .setColor(0x0f0);
+                        .setColor(misc.embeds.colors.success);
                     chunk.forEach((mailId) => {
                         embed.addFields({
                             name: compareStrings(
@@ -622,7 +625,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     new EmbedBuilder()
                         .setTitle(phrase.HOW_TO_USE_TITLE)
                         .setDescription(phrase.HOW_TO_USE_DESC)
-                        .setColor(0x0f0),
+                        .setColor(misc.embeds.colors.success),
                 ],
             });
             break;
@@ -634,7 +637,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                             embeds: [
                                 new EmbedBuilder()
                                     .setTitle(phrase.DM_CHANNEL_NOT_ALLOWED)
-                                    .setColor(0xf00),
+                                    .setColor(misc.embeds.colors.error),
                             ],
                         });
                     let whitelist = fs.readFileSync(
@@ -648,7 +651,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                 embeds: [
                                     new EmbedBuilder()
                                         .setTitle(phrase.WHITELIST_EMPTY)
-                                        .setColor(0x0f0),
+                                        .setColor(misc.embeds.colors.success),
                                 ],
                             });
                         }
@@ -664,7 +667,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                 new EmbedBuilder()
                                     .setTitle(phrase.WHITELIST_USERS)
                                     .setDescription(desc)
-                                    .setColor(0x0f0),
+                                    .setColor(misc.embeds.colors.success),
                             ],
                         });
                     } catch (e) {
@@ -676,7 +679,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                             embeds: [
                                 new EmbedBuilder()
                                     .setTitle(phrase.DM_CHANNEL_NOT_ALLOWED)
-                                    .setColor(0xf00),
+                                    .setColor(misc.embeds.colors.error),
                             ],
                         });
 
@@ -715,7 +718,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                     embeds: [
                                         new EmbedBuilder()
                                             .setTitle(phrase.ADDED_TO_WHITELIST)
-                                            .setColor(0x0f0),
+                                            .setColor(misc.embeds.colors.success),
                                     ],
                                 });
                             }
@@ -730,7 +733,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                             embeds: [
                                 new EmbedBuilder()
                                     .setTitle(phrase.DM_CHANNEL_NOT_ALLOWED)
-                                    .setColor(0xf00),
+                                    .setColor(misc.embeds.colors.error),
                             ],
                         });
 
@@ -772,7 +775,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                             .setTitle(
                                                 phrase.REMOVED_FROM_WHITELIST
                                             )
-                                            .setColor(0x0f0),
+                                            .setColor(misc.embeds.colors.success),
                                     ],
                                 });
                             }
@@ -801,7 +804,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                             interaction.options.get("id").value
                                         )
                                     )
-                                    .setColor(0xf00),
+                                    .setColor(misc.embeds.colors.error),
                             ],
                         });
                     } else {
@@ -818,7 +821,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                 embeds: [
                                     new EmbedBuilder()
                                         .setTitle(phrase.LOG_FILE_NOT_FOUND)
-                                        .setColor(0xf00),
+                                        .setColor(misc.embeds.colors.error),
                                 ],
                             });
                         }
@@ -841,7 +844,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                             interaction.options.get("id").value
                                         )
                                     )
-                                    .setColor(0xf00),
+                                    .setColor(misc.embeds.colors.error),
                             ],
                         });
                     } else {
@@ -888,7 +891,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                                 inline: false,
                                             }
                                         )
-                                        .setColor(0x0f0),
+                                        .setColor(misc.embeds.colors.success),
                                 ],
                             });
                         } else {
@@ -896,7 +899,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                 embeds: [
                                     new EmbedBuilder()
                                         .setTitle(phrase.LOG_FILE_NOT_FOUND)
-                                        .setColor(0xf00),
+                                        .setColor(misc.embeds.colors.error),
                                 ],
                             });
                         }
@@ -907,7 +910,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                         embeds: [
                             new EmbedBuilder()
                                 .setTitle(phrase.INVALID_ACTION)
-                                .setColor(0xf00),
+                                .setColor(misc.embeds.colors.error),
                         ],
                     });
             }

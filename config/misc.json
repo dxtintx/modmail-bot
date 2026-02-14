@@ -1,0 +1,8 @@
+{
+    "embeds": {
+        "colors": {
+            "success": "#0f0",
+            "error": "#f00"
+        }
+    }
+}
