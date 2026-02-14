@@ -13,6 +13,7 @@ const {
     SlashCommandNumberOption,
     DMChannel,
     SlashCommandSubcommandBuilder,
+    ActionRowBuilder, ButtonBuilder, ButtonStyle
 } = require("discord.js");
 const client = new Client({
     intents: [
@@ -27,10 +28,9 @@ let phrase;
 const fs = require("fs");
 const path = require("path");
 const [wlPath, mailsPath] = ["./data/whitelist.json", "./data/mails.json"];
-const dotenv = require("dotenv").config({
+require("dotenv").config({
     path: process.argv[2] == "dev" ? ".env.development" : ".env",
 });
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const { TOKEN, CLIENT_ID } = process.env;
 
 const rest = new REST({ version: "10" }).setToken(TOKEN);
