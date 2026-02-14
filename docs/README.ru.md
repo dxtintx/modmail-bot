@@ -15,12 +15,12 @@
 ### Установка
 
 1. Клонируйте репозиторий и перейдите в папку проекта:
-    ```
+    ```bash
     git clone https://github.com/dxtintx/modmail-bot.git
     cd modmail-bot
     ```
 2. Установите зависимости:
-    ```
+    ```bash
     npm install
     ```
 
@@ -33,7 +33,7 @@
 
 ### Запуск бота
 
-```
+```bash
 npm start
 ```
 

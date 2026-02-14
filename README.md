@@ -15,12 +15,12 @@ A lightweight ModMail bot for Discord. Use this guide to install, configure, and
 ### Installation
 
 1. Clone the repository and change into the project folder:
-    ```
+    ```bash
     git clone https://github.com/dxtintx/modmail-bot.git
     cd modmail-bot
     ```
 2. Install dependencies:
-    ```
+    ```bash
     npm install
     ```
 
@@ -33,7 +33,7 @@ Create a `.env` file in the project root or in container's Environment Variables
 
 ### Start the bot
 
-```
+```bash
 npm start
 ```
 
