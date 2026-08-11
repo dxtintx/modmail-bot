@@ -1,6 +1,6 @@
 # ModMail Bot
 
-Також: [English](../README.md), **Українська**, [русский](./README.ru.md)
+Також: [English](../README.md), **Українська**
 
 ## Використання
 
